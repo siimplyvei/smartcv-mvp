@@ -5,34 +5,71 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'login' | 'signup';
-  onLogin: (userData: { name: string; email: string }) => void;
 }
 
-const AuthModal = ({ isOpen, onClose, mode, onLogin }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, mode }: AuthModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp, signIn } = useAuth();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simulate authentication success
-    const userData = {
-      name: formData.name || formData.email.split('@')[0],
-      email: formData.email,
-    };
-    
-    onLogin(userData);
-    
-    // Reset form
-    setFormData({ name: '', email: '', password: '' });
+    setIsLoading(true);
+
+    try {
+      if (mode === 'signup') {
+        const { error } = await signUp(formData.email, formData.password, formData.name);
+        if (error) {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account."
+          });
+          onClose();
+        }
+      } else {
+        const { error } = await signIn(formData.email, formData.password);
+        if (error) {
+          toast({
+            title: "Sign in failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in."
+          });
+          onClose();
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "An error occurred",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      setFormData({ name: '', email: '', password: '' });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +102,7 @@ const AuthModal = ({ isOpen, onClose, mode, onLogin }: AuthModalProps) => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required={mode === 'signup'}
+                    disabled={isLoading}
                   />
                 </div>
               )}
@@ -79,6 +117,7 @@ const AuthModal = ({ isOpen, onClose, mode, onLogin }: AuthModalProps) => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
               
@@ -92,19 +131,14 @@ const AuthModal = ({ isOpen, onClose, mode, onLogin }: AuthModalProps) => {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
               
-              <Button type="submit" className="w-full">
-                {mode === 'login' ? 'Sign In' : 'Create Account'}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Processing...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
               </Button>
             </form>
-            
-            <div className="mt-4 text-center text-sm text-gray-600">
-              <p className="bg-yellow-50 border border-yellow-200 rounded p-2">
-                <strong>Demo Mode:</strong> This is a frontend demo. For full functionality including real authentication and AI processing, connect to Supabase backend.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </DialogContent>

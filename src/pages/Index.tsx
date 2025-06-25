@@ -1,30 +1,29 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Download, User, BookOpen } from "lucide-react";
 import AuthModal from "@/components/AuthModal";
 import Dashboard from "@/components/Dashboard";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { user, loading } = useAuth();
 
-  const handleLogin = (userData: { name: string; email: string }) => {
-    setUser(userData);
-    setIsLoggedIn(true);
-    setShowAuthModal(false);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleLogout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
-  };
-
-  if (isLoggedIn && user) {
-    return <Dashboard user={user} onLogout={handleLogout} />;
+  if (user) {
+    return <Dashboard />;
   }
 
   return (
@@ -171,7 +170,6 @@ const Index = () => {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         mode={authMode}
-        onLogin={handleLogin}
       />
     </div>
   );

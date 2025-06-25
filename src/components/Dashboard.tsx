@@ -1,20 +1,16 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Upload, User } from "lucide-react";
 import CVUpload from "@/components/CVUpload";
 import CVPreview from "@/components/CVPreview";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface DashboardProps {
-  user: { name: string; email: string };
-  onLogout: () => void;
-}
-
-const Dashboard = ({ user, onLogout }: DashboardProps) => {
+const Dashboard = () => {
   const [currentStep, setCurrentStep] = useState<'upload' | 'preview'>('upload');
   const [uploadedCV, setUploadedCV] = useState<File | null>(null);
   const [enhancedCV, setEnhancedCV] = useState<any>(null);
+  const { user, signOut } = useAuth();
 
   const handleCVUploaded = (file: File) => {
     setUploadedCV(file);
@@ -55,9 +51,9 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-gray-600" />
-                <span className="text-gray-700">{user.name}</span>
+                <span className="text-gray-700">{user?.user_metadata?.full_name || user?.email}</span>
               </div>
-              <Button variant="outline" onClick={onLogout}>
+              <Button variant="outline" onClick={signOut}>
                 Logout
               </Button>
             </div>
@@ -69,7 +65,7 @@ const Dashboard = ({ user, onLogout }: DashboardProps) => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user.name}!
+            Welcome back, {user?.user_metadata?.full_name || user?.email}!
           </h2>
           <p className="text-lg text-gray-600">
             Ready to enhance your CV with AI?
