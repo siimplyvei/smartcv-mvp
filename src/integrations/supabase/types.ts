@@ -12,31 +12,37 @@ export type Database = {
       documents: {
         Row: {
           analysis_json: Json | null
+          backed_up_to_s3: boolean | null
           file_name: string
           file_type: string | null
           file_url: string
           id: string
           job_target: string | null
+          s3_key: string | null
           uploaded_at: string | null
           user_id: string | null
         }
         Insert: {
           analysis_json?: Json | null
+          backed_up_to_s3?: boolean | null
           file_name: string
           file_type?: string | null
           file_url: string
           id?: string
           job_target?: string | null
+          s3_key?: string | null
           uploaded_at?: string | null
           user_id?: string | null
         }
         Update: {
           analysis_json?: Json | null
+          backed_up_to_s3?: boolean | null
           file_name?: string
           file_type?: string | null
           file_url?: string
           id?: string
           job_target?: string | null
+          s3_key?: string | null
           uploaded_at?: string | null
           user_id?: string | null
         }
