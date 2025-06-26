@@ -1,0 +1,37 @@
+name: Lint, Test & Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 📥 Install dependencies
+        run: npm install
+
+      - name: 🧹 Run linter
+        run: npm run lint
+
+      - name: 🧪 Run tests
+        run: npm run test -- --watchAll=false
+
+      - name: 🏗️ Build project
+        run: npm run build
+
+      - name: 🚀 Deploy to Vercel
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
