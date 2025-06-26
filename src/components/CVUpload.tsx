@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,15 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
   const [processingStep, setProcessingStep] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Function to sanitize file names
+  const sanitizeFileName = (fileName: string): string => {
+    return fileName
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, '_') // Replace special characters with underscores
+      .replace(/_{2,}/g, '_') // Replace multiple underscores with single underscore
+      .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -62,10 +70,13 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
     setProcessingStep('Uploading file...');
     
     try {
-      // Create file path with user ID folder structure
-      const fileName = `${Date.now()}-${file.name}`;
+      // Sanitize the filename to avoid special characters
+      const sanitizedFileName = sanitizeFileName(file.name);
+      const fileName = `${Date.now()}-${sanitizedFileName}`;
       const filePath = `${user.id}/${fileName}`;
       
+      console.log('Original filename:', file.name);
+      console.log('Sanitized filename:', sanitizedFileName);
       console.log('Uploading file to Supabase Storage:', filePath);
       
       // Upload to Supabase Storage
@@ -87,12 +98,12 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
         .from('cv-files')
         .getPublicUrl(filePath);
 
-      // Save document record to database
+      // Save document record to database (using original filename for display)
       const { data: documentData, error: dbError } = await supabase
         .from('documents')
         .insert({
           user_id: user.id,
-          file_name: file.name,
+          file_name: file.name, // Keep original name for display
           file_url: urlData.publicUrl,
           file_type: file.type,
           backed_up_to_s3: false
