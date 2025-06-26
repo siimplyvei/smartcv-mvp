@@ -2,6 +2,8 @@
 
 ## SmartCV
 
+Por: Victor Manuel Valladares Centeno
+
 ## Tecnologias utilizadas para este proyecto?
 
 This project is built with:
