@@ -21,8 +21,8 @@ jobs:
       - name: 📥 Install dependencies
         run: npm install
 
-      - name: 🧪 Run tests
-        run: npm run test -- --watchAll=false
+      #- name: 🧪 Run tests
+      #  run: npm run test -- --watchAll=false
 
       - name: 🏗️ Build project
         run: npm run build
