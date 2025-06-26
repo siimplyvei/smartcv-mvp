@@ -1,37 +1,35 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Upload } from "lucide-react";
+import { Download, FileText, Upload, Eye } from "lucide-react";
+import { generateCVTemplate, downloadCVAsHTML } from "@/utils/cvTemplateGenerator";
+import { useState } from "react";
 
 interface CVPreviewProps {
   enhancedCV: {
     originalName: string;
     enhancedName: string;
+    enhancedContent: any;
     improvements: string[];
   };
   onStartOver: () => void;
 }
 
 const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+
   const handleDownload = () => {
-    // Simulate CV download
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = enhancedCV.enhancedName;
-    
-    // Create a simple text content for demo
-    const content = `Enhanced CV - ${enhancedCV.enhancedName}
+    const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
+    downloadCVAsHTML(htmlContent, enhancedCV.enhancedName);
+  };
 
-This is your AI-enhanced CV with the following improvements:
-${enhancedCV.improvements.map(improvement => `• ${improvement}`).join('\n')}
-
-[In a real implementation, this would be the actual enhanced PDF]`;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    
-    URL.revokeObjectURL(link.href);
+  const handlePreview = () => {
+    const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+    }
   };
 
   return (
@@ -43,20 +41,45 @@ ${enhancedCV.improvements.map(improvement => `• ${improvement}`).join('\n')}
             <FileText className="h-8 w-8 text-green-600" />
           </div>
           <CardTitle className="text-2xl text-green-800">
-            Your CV Has Been Enhanced!
+            Your CV Has Been Enhanced with AI!
           </CardTitle>
           <CardDescription className="text-green-700">
-            Our AI has successfully analyzed and improved your CV
+            Cohere AI has successfully analyzed and improved your CV
           </CardDescription>
         </CardHeader>
       </Card>
+
+      {/* CV Details Card */}
+      {enhancedCV.enhancedContent?.personalInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Enhanced CV Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {enhancedCV.enhancedContent.personalInfo.name && (
+                <p><strong>Name:</strong> {enhancedCV.enhancedContent.personalInfo.name}</p>
+              )}
+              {enhancedCV.enhancedContent.personalInfo.email && (
+                <p><strong>Email:</strong> {enhancedCV.enhancedContent.personalInfo.email}</p>
+              )}
+              {enhancedCV.enhancedContent.personalInfo.summary && (
+                <div>
+                  <strong>Professional Summary:</strong>
+                  <p className="mt-1 text-gray-700">{enhancedCV.enhancedContent.personalInfo.summary}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Improvements Card */}
       <Card>
         <CardHeader>
           <CardTitle>AI Improvements Made</CardTitle>
           <CardDescription>
-            Here's what our AI enhanced in your CV:
+            Here's what Cohere AI enhanced in your CV:
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,7 +99,7 @@ ${enhancedCV.improvements.map(improvement => `• ${improvement}`).join('\n')}
         <CardHeader>
           <CardTitle>Download Your Enhanced CV</CardTitle>
           <CardDescription>
-            Your professionally enhanced CV is ready for download
+            Your AI-enhanced CV is ready for download as a formatted HTML file
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -85,13 +108,19 @@ ${enhancedCV.improvements.map(improvement => `• ${improvement}`).join('\n')}
               <FileText className="h-8 w-8 text-blue-600" />
               <div>
                 <p className="font-medium">{enhancedCV.enhancedName}</p>
-                <p className="text-sm text-gray-600">AI-Enhanced PDF</p>
+                <p className="text-sm text-gray-600">AI-Enhanced HTML CV</p>
               </div>
             </div>
-            <Button onClick={handleDownload}>
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={handlePreview} variant="outline">
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </Button>
+              <Button onClick={handleDownload}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            </div>
           </div>
           
           <div className="flex space-x-4">
@@ -100,15 +129,6 @@ ${enhancedCV.improvements.map(improvement => `• ${improvement}`).join('\n')}
               Upload Another CV
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Demo Note */}
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardContent className="pt-6">
-          <p className="text-sm text-yellow-800">
-            <strong>Demo Note:</strong> This is a frontend demonstration. In a full implementation with Supabase backend, the AI would process your actual PDF and generate a real enhanced version with proper formatting, content improvements, and professional layout.
-          </p>
         </CardContent>
       </Card>
     </div>

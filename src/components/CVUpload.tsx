@@ -6,14 +6,16 @@ import { Upload, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { extractTextFromPDF } from "@/utils/pdfTextExtractor";
 
 interface CVUploadProps {
-  onCVUploaded: (file: File) => void;
+  onCVUploaded: (enhancedData: any) => void;
 }
 
 const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -57,6 +59,7 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
     }
 
     setIsProcessing(true);
+    setProcessingStep('Uploading file...');
     
     try {
       // Create file path with user ID folder structure
@@ -103,46 +106,67 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
 
       console.log('Document record created:', documentData);
 
-      // Trigger automatic backup to S3
+      // Extract text from PDF
+      setProcessingStep('Extracting text from PDF...');
+      const cvText = await extractTextFromPDF(file);
+      console.log('Text extracted from PDF');
+
+      // Enhance CV with Cohere AI
+      setProcessingStep('Enhancing CV with AI...');
+      const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-cv-with-cohere', {
+        body: {
+          documentId: documentData.id,
+          cvText: cvText
+        }
+      });
+
+      if (enhanceError) {
+        throw new Error(`AI enhancement failed: ${enhanceError.message}`);
+      }
+
+      console.log('CV enhanced successfully:', enhanceData);
+
+      // Trigger backup to S3 (non-blocking)
+      setProcessingStep('Creating backup...');
       try {
-        const { data: backupData, error: backupError } = await supabase.functions.invoke('backup-to-s3', {
+        await supabase.functions.invoke('backup-to-s3', {
           body: {
             documentId: documentData.id,
             filePath: filePath
           }
         });
-
-        if (backupError) {
-          console.error('Backup failed:', backupError);
-          toast({
-            title: "Backup Warning",
-            description: "File uploaded but backup to S3 failed. It will be retried in the next sync.",
-            variant: "destructive"
-          });
-        } else {
-          console.log('Backup initiated:', backupData);
-        }
       } catch (backupError) {
-        console.error('Backup error:', backupError);
-        // Don't block the main upload process if backup fails
+        console.error('Backup failed:', backupError);
+        // Don't block the main process if backup fails
       }
 
       toast({
-        title: "Upload Successful",
-        description: "Your CV has been uploaded and is being processed.",
+        title: "CV Enhanced Successfully!",
+        description: "Your CV has been analyzed and enhanced with AI.",
       });
 
-      // Continue with the existing flow
-      onCVUploaded(file);
+      // Pass the enhanced data to the parent component
+      onCVUploaded({
+        originalName: file.name,
+        enhancedName: `Enhanced_${file.name.replace('.pdf', '.html')}`,
+        enhancedContent: enhanceData.enhancedContent,
+        improvements: enhanceData.enhancedContent?.improvements || [
+          "Content optimization with AI",
+          "Professional formatting applied",
+          "ATS-friendly structure implemented"
+        ]
+      });
       
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Upload/Enhancement error:', error);
       toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload file",
+        title: "Process Failed",
+        description: error instanceof Error ? error.message : "Failed to process CV",
         variant: "destructive"
       });
+    } finally {
       setIsProcessing(false);
+      setProcessingStep('');
     }
   };
 
@@ -152,11 +176,9 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
         <CardContent className="p-12 text-center">
           <div className="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <h3 className="text-xl font-semibold mb-2">Processing Your CV</h3>
-          <p className="text-gray-600 mb-2">
-            Uploading to secure storage and creating backup...
-          </p>
+          <p className="text-gray-600 mb-2">{processingStep}</p>
           <p className="text-sm text-gray-500">
-            Our AI will analyze your CV once upload is complete
+            Our AI is analyzing and enhancing your CV...
           </p>
         </CardContent>
       </Card>
