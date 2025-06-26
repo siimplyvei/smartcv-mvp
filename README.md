@@ -19,5 +19,5 @@ This project is built with:
 
 ## Dirección de la página web?
 
-[text](https://smartcv-mvp.vercel.app/)
+[SmartCV](https://smartcv-mvp.vercel.app/)
 
