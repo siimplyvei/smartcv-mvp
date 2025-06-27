@@ -2,8 +2,21 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem } from 'pdfjs-dist/types/src/display/api';
 
-// Set up the worker with a more reliable CDN URL
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Set up the worker with multiple fallback options
+const setupWorker = () => {
+  // Try multiple CDN sources for better reliability
+  const workerUrls = [
+    `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
+    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
+    `https://mozilla.github.io/pdf.js/build/pdf.worker.js`
+  ];
+  
+  // Use the first URL as primary
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
+};
+
+// Initialize worker
+setupWorker();
 
 export const extractTextFromPDF = async (file: File): Promise<string> => {
   try {
@@ -13,10 +26,16 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
     console.log('File converted to ArrayBuffer, size:', arrayBuffer.byteLength);
     
-    // Load the PDF document
+    // Load the PDF document with more robust settings
     const loadingTask = pdfjsLib.getDocument({ 
       data: arrayBuffer,
-      // Add some options to handle different PDF types
+      // Disable worker if there are issues and fall back to main thread
+      disableWorker: false,
+      // Add timeout and other options
+      stopAtErrors: false,
+      maxImageSize: 1024 * 1024,
+      cMapPacked: true,
+      cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
       useSystemFonts: true,
       standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
     });
@@ -30,18 +49,23 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       console.log(`Processing page ${pageNum}/${pdf.numPages}`);
       
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
+      try {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
 
-      // More robust text extraction
-      const pageStrings = textContent.items
-        .filter((item): item is TextItem => 'str' in item)
-        .map((item: TextItem) => item.str)
-        .filter(str => str.trim().length > 0); // Filter out empty strings
+        // More robust text extraction
+        const pageStrings = textContent.items
+          .filter((item): item is TextItem => 'str' in item)
+          .map((item: TextItem) => item.str)
+          .filter(str => str.trim().length > 0); // Filter out empty strings
 
-      const pageText = pageStrings.join(' ');
-      if (pageText.trim()) {
-        fullText += pageText + '\n\n';
+        const pageText = pageStrings.join(' ');
+        if (pageText.trim()) {
+          fullText += pageText + '\n\n';
+        }
+      } catch (pageError) {
+        console.warn(`Error processing page ${pageNum}:`, pageError);
+        // Continue with other pages even if one fails
       }
     }
 
@@ -56,14 +80,23 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
   } catch (error) {
     console.error('Detailed PDF extraction error:', error);
     
+    // If worker fails, try without worker as fallback
+    if (error instanceof Error && error.message.includes('worker')) {
+      console.log('Retrying PDF extraction without worker...');
+      try {
+        return await extractTextWithoutWorker(file);
+      } catch (fallbackError) {
+        console.error('Fallback extraction also failed:', fallbackError);
+        throw new Error('PDF processing failed. The PDF might be corrupted or use an unsupported format.');
+      }
+    }
+    
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes('Invalid PDF')) {
         throw new Error('The uploaded file is not a valid PDF document.');
       } else if (error.message.includes('encrypted')) {
         throw new Error('The PDF is password protected or encrypted.');
-      } else if (error.message.includes('worker')) {
-        throw new Error('PDF processing failed due to worker issues. Please try again.');
       } else {
         throw new Error(`PDF text extraction failed: ${error.message}`);
       }
@@ -71,4 +104,35 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
     
     throw new Error('Failed to extract text from PDF. Please ensure the file is a valid, non-encrypted PDF.');
   }
+};
+
+// Fallback function that disables worker
+const extractTextWithoutWorker = async (file: File): Promise<string> => {
+  const arrayBuffer = await file.arrayBuffer();
+  
+  const loadingTask = pdfjsLib.getDocument({ 
+    data: arrayBuffer,
+    disableWorker: true, // Force disable worker
+    stopAtErrors: false
+  });
+  
+  const pdf: PDFDocumentProxy = await loadingTask.promise;
+  let fullText = '';
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+
+    const pageStrings = textContent.items
+      .filter((item): item is TextItem => 'str' in item)
+      .map((item: TextItem) => item.str)
+      .filter(str => str.trim().length > 0);
+
+    const pageText = pageStrings.join(' ');
+    if (pageText.trim()) {
+      fullText += pageText + '\n\n';
+    }
+  }
+
+  return fullText.trim();
 };
