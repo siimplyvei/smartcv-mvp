@@ -26,12 +26,9 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
     console.log('File converted to ArrayBuffer, size:', arrayBuffer.byteLength);
     
-    // Load the PDF document with more robust settings
+    // Load the PDF document with correct settings
     const loadingTask = pdfjsLib.getDocument({ 
       data: arrayBuffer,
-      // Disable worker if there are issues and fall back to main thread
-      disableWorker: false,
-      // Add timeout and other options
       stopAtErrors: false,
       maxImageSize: 1024 * 1024,
       cMapPacked: true,
@@ -80,13 +77,13 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
   } catch (error) {
     console.error('Detailed PDF extraction error:', error);
     
-    // If worker fails, try without worker as fallback
+    // If worker fails, try alternative approach
     if (error instanceof Error && error.message.includes('worker')) {
-      console.log('Retrying PDF extraction without worker...');
+      console.log('Retrying PDF extraction with alternative approach...');
       try {
-        return await extractTextWithoutWorker(file);
+        return await extractTextWithAlternativeApproach(file);
       } catch (fallbackError) {
-        console.error('Fallback extraction also failed:', fallbackError);
+        console.error('Alternative extraction also failed:', fallbackError);
         throw new Error('PDF processing failed. The PDF might be corrupted or use an unsupported format.');
       }
     }
@@ -106,13 +103,13 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
   }
 };
 
-// Fallback function that disables worker
-const extractTextWithoutWorker = async (file: File): Promise<string> => {
+// Alternative approach without worker configuration changes
+const extractTextWithAlternativeApproach = async (file: File): Promise<string> => {
   const arrayBuffer = await file.arrayBuffer();
   
+  // Use basic configuration
   const loadingTask = pdfjsLib.getDocument({ 
     data: arrayBuffer,
-    disableWorker: true, // Force disable worker
     stopAtErrors: false
   });
   
