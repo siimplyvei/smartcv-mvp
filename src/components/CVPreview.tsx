@@ -19,11 +19,13 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
   const [showPreview, setShowPreview] = useState(false);
 
   const handleDownload = () => {
+    console.log('Downloading CV with content:', enhancedCV.enhancedContent);
     const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
     downloadCVAsHTML(htmlContent, enhancedCV.enhancedName);
   };
 
   const handlePreview = () => {
+    console.log('Previewing CV with content:', enhancedCV.enhancedContent);
     const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
     const newWindow = window.open('', '_blank');
     if (newWindow) {
@@ -84,12 +86,19 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            {enhancedCV.improvements.map((improvement, index) => (
-              <li key={index} className="flex items-start space-x-3">
+            {enhancedCV.improvements && enhancedCV.improvements.length > 0 ? (
+              enhancedCV.improvements.map((improvement, index) => (
+                <li key={index} className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">{improvement}</span>
+                </li>
+              ))
+            ) : (
+              <li className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-gray-700">{improvement}</span>
+                <span className="text-gray-700">AI enhancement completed successfully</span>
               </li>
-            ))}
+            )}
           </ul>
         </CardContent>
       </Card>
@@ -107,7 +116,7 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
             <div className="flex items-center space-x-3">
               <FileText className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="font-medium">{enhancedCV.enhancedName}</p>
+                <p className="font-medium">{enhancedCV.enhancedName || 'Enhanced_CV.html'}</p>
                 <p className="text-sm text-gray-600">AI-Enhanced HTML CV</p>
               </div>
             </div>

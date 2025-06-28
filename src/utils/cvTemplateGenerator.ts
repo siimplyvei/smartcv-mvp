@@ -30,6 +30,21 @@ interface EnhancedCVData {
   rawContent?: string;
 }
 
+const inspirationalQuotes = [
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill",
+  "The only way to do great work is to love what you do. - Steve Jobs",
+  "Innovation distinguishes between a leader and a follower. - Steve Jobs",
+  "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. - Steve Jobs",
+  "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+  "It is during our darkest moments that we must focus to see the light. - Aristotle",
+  "Believe you can and you're halfway there. - Theodore Roosevelt",
+  "The only impossible journey is the one you never begin. - Tony Robbins"
+];
+
+const getRandomQuote = (): string => {
+  return inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)];
+};
+
 export const generateCVTemplate = (data: EnhancedCVData): string => {
   const {
     personalInfo = {},
@@ -38,6 +53,8 @@ export const generateCVTemplate = (data: EnhancedCVData): string => {
     skills = [],
     improvements = []
   } = data;
+
+  const randomQuote = getRandomQuote();
 
   return `
 <!DOCTYPE html>
@@ -133,9 +150,30 @@ export const generateCVTemplate = (data: EnhancedCVData): string => {
         .improvements li {
             margin-bottom: 5px;
         }
+        .ai-footer {
+            margin-top: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .ai-footer h3 {
+            margin-top: 0;
+            color: white;
+        }
+        .quote {
+            font-style: italic;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            border-left: 4px solid rgba(255,255,255,0.3);
+        }
         @media print {
             body { padding: 0; }
             .improvements { display: none; }
+            .ai-footer { display: none; }
         }
     </style>
 </head>
@@ -201,6 +239,14 @@ export const generateCVTemplate = (data: EnhancedCVData): string => {
         </ul>
     </div>
     ` : ''}
+
+    <div class="ai-footer">
+        <h3>🚀 This CV was enhanced with SmartCV and Cohere AI</h3>
+        <p>Your professional journey has been optimized with cutting-edge artificial intelligence to help you stand out in today's competitive job market.</p>
+        <div class="quote">
+            <p>"${randomQuote}"</p>
+        </div>
+    </div>
 </body>
 </html>
   `.trim();
