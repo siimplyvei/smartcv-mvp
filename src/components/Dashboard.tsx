@@ -15,61 +15,10 @@ const Dashboard = () => {
   const [enhancedCV, setEnhancedCV] = useState<any>(null);
   const { user, signOut } = useAuth();
 
-  const handleCVUploaded = (file: File) => {
-    setUploadedCV(file);
-    
-    // Create enhanced CV data structure that matches what we expect
-    const mockEnhancedContent = {
-      personalInfo: {
-        name: "John Doe",
-        email: "john.doe@email.com",
-        phone: "(555) 123-4567",
-        location: "New York, NY",
-        summary: "Experienced software developer with 5+ years in web development. Skilled in JavaScript, React, and Node.js. Passionate about creating user-friendly applications and solving complex problems."
-      },
-      experience: [
-        {
-          title: "Senior Developer",
-          company: "Tech Company",
-          duration: "2020-2024",
-          description: "Developed and maintained web applications using React and Node.js. Collaborated with cross-functional teams to deliver high-quality software. Implemented responsive designs and optimized application performance."
-        },
-        {
-          title: "Junior Developer",
-          company: "Startup Inc",
-          duration: "2018-2020",
-          description: "Built frontend components using JavaScript and CSS. Participated in code reviews and agile development processes. Contributed to database design and API development."
-        }
-      ],
-      education: [
-        {
-          degree: "Bachelor of Science in Computer Science",
-          institution: "University of Technology",
-          year: "2014-2018",
-          details: "Graduated with honors, focusing on software engineering and web development."
-        }
-      ],
-      skills: ["JavaScript", "React", "Node.js", "HTML", "CSS", "Git", "SQL", "MongoDB"],
-      improvements: [
-        "Optimized keywords for ATS systems",
-        "Enhanced professional summary with quantifiable achievements",
-        "Improved formatting and structure for better readability",
-        "Added comprehensive skills section with relevant technologies",
-        "Strengthened job descriptions with action verbs and measurable results",
-        "Integrated modern CV design principles for visual appeal"
-      ]
-    };
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      setEnhancedCV({
-        originalName: file.name,
-        enhancedName: `Enhanced_${file.name.replace('.pdf', '')}.html`,
-        enhancedContent: mockEnhancedContent,
-        improvements: mockEnhancedContent.improvements
-      });
-      setCurrentStep('preview');
-    }, 2000);
+  const handleCVProcessed = (enhancedData: any) => {
+    console.log('CV processed with enhanced data:', enhancedData);
+    setEnhancedCV(enhancedData);
+    setCurrentStep('preview');
   };
 
   const handleStartOver = () => {
@@ -147,7 +96,7 @@ const Dashboard = () => {
 
             {/* Enhancement Content */}
             {currentStep === 'upload' ? (
-              <CVUpload onCVUploaded={handleCVUploaded} />
+              <CVUpload onCVUploaded={handleCVProcessed} />
             ) : (
               <CVPreview 
                 enhancedCV={enhancedCV} 
