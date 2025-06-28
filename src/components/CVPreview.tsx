@@ -2,8 +2,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Upload, Eye } from "lucide-react";
-import { generateCVTemplate, downloadCVAsHTML } from "@/utils/cvTemplateGenerator";
+import { generateCVTemplate } from "@/utils/cvTemplateGenerator";
 import { useState } from "react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface CVPreviewProps {
   enhancedCV: {
@@ -16,12 +18,78 @@ interface CVPreviewProps {
 }
 
 const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
-  const [showPreview, setShowPreview] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  const handleDownload = () => {
-    console.log('Downloading CV with content:', enhancedCV.enhancedContent);
-    const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
-    downloadCVAsHTML(htmlContent, enhancedCV.enhancedName);
+  const handleDownload = async () => {
+    console.log('Downloading CV as PDF with content:', enhancedCV.enhancedContent);
+    setIsGeneratingPDF(true);
+    
+    try {
+      const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
+      
+      // Create a temporary div to render HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '800px';
+      document.body.appendChild(tempDiv);
+
+      // Convert HTML to canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: 800,
+        height: tempDiv.scrollHeight
+      });
+
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download PDF
+      const fileName = enhancedCV.enhancedName.replace('.html', '.pdf');
+      pdf.save(fileName);
+
+      // Clean up
+      document.body.removeChild(tempDiv);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to HTML download if PDF generation fails
+      const htmlContent = generateCVTemplate(enhancedCV.enhancedContent);
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = enhancedCV.enhancedName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const handlePreview = () => {
@@ -108,7 +176,7 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
         <CardHeader>
           <CardTitle>Download Your Enhanced CV</CardTitle>
           <CardDescription>
-            Your AI-enhanced CV is ready for download as a formatted HTML file
+            Your AI-enhanced CV is ready for download as a formatted PDF file
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -116,8 +184,8 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
             <div className="flex items-center space-x-3">
               <FileText className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="font-medium">{enhancedCV.enhancedName || 'Enhanced_CV.html'}</p>
-                <p className="text-sm text-gray-600">AI-Enhanced HTML CV</p>
+                <p className="font-medium">{enhancedCV.enhancedName?.replace('.html', '.pdf') || 'Enhanced_CV.pdf'}</p>
+                <p className="text-sm text-gray-600">AI-Enhanced PDF CV</p>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -125,9 +193,9 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
                 <Eye className="w-4 h-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={handleDownload}>
+              <Button onClick={handleDownload} disabled={isGeneratingPDF}>
                 <Download className="w-4 h-4 mr-2" />
-                Download
+                {isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}
               </Button>
             </div>
           </div>
