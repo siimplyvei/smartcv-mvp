@@ -17,7 +17,6 @@ Este proyecto fue hecho utilizando las siguientes tecnologías:
 - Gemini AI
 - PostgresSQL
 - Supabase
-- Lovable 
 - Vercel
 
 ## Dirección de la página web?
