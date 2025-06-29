@@ -14,7 +14,7 @@ Este proyecto fue hecho utilizando las siguientes tecnologías:
 - shadcn-ui
 - Tailwind CSS
 - AWS (S3)
-- Cohere
+- Gemini AI
 - PostgresSQL
 - Supabase
 - Lovable 
