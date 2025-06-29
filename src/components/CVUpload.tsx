@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,6 @@ import { Upload, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { extractTextFromPDF } from "@/utils/pdfTextExtractor";
 
 interface CVUploadProps {
   onCVUploaded: (enhancedData: any) => void;
@@ -25,6 +25,20 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
       .replace(/[^a-z0-9.-]/g, '_') // Replace special characters with underscores
       .replace(/_{2,}/g, '_') // Replace multiple underscores with single underscore
       .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+  };
+
+  // Function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        // Remove the data:application/pdf;base64, prefix
+        resolve(base64.split(',')[1]);
+      };
+      reader.onerror = error => reject(error);
+    });
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -117,17 +131,17 @@ const CVUpload = ({ onCVUploaded }: CVUploadProps) => {
 
       console.log('Document record created:', documentData);
 
-      // Extract text from PDF
-      setProcessingStep('Extracting text from PDF...');
-      const cvText = await extractTextFromPDF(file);
-      console.log('Text extracted from PDF');
+      // Convert PDF to base64 for Gemini
+      setProcessingStep('Processing PDF for AI analysis...');
+      const pdfBase64 = await fileToBase64(file);
+      console.log('PDF converted to base64');
 
-      // Enhance CV with Cohere AI
+      // Enhance CV with Gemini AI
       setProcessingStep('Enhancing CV with AI...');
-      const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-cv-with-cohere', {
+      const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-cv-with-gemini', {
         body: {
           documentId: documentData.id,
-          cvText: cvText
+          pdfBase64: pdfBase64
         }
       });
 

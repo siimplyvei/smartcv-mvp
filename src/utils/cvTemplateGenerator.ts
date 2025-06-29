@@ -241,7 +241,7 @@ export const generateCVTemplate = (data: EnhancedCVData): string => {
     ` : ''}
 
     <div class="ai-footer">
-        <h3>🚀 This CV was enhanced with SmartCV and Cohere AI</h3>
+        <h3>🚀 This CV was enhanced with SmartCV and Google Gemini AI</h3>
         <p>Your professional journey has been optimized with cutting-edge artificial intelligence to help you stand out in today's competitive job market.</p>
         <div class="quote">
             <p>"${randomQuote}"</p>

@@ -114,7 +114,7 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
             Your CV Has Been Enhanced with AI!
           </CardTitle>
           <CardDescription className="text-green-700">
-            Cohere AI has successfully analyzed and improved your CV
+            Google Gemini AI has successfully analyzed and improved your CV
           </CardDescription>
         </CardHeader>
       </Card>
@@ -149,7 +149,7 @@ const CVPreview = ({ enhancedCV, onStartOver }: CVPreviewProps) => {
         <CardHeader>
           <CardTitle>AI Improvements Made</CardTitle>
           <CardDescription>
-            Here's what Cohere AI enhanced in your CV:
+            Here's what Google Gemini AI enhanced in your CV:
           </CardDescription>
         </CardHeader>
         <CardContent>
