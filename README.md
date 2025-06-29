@@ -6,7 +6,7 @@ Por: Victor Manuel Valladares Centeno
 
 ## Tecnologias utilizadas para este proyecto?
 
-This project is built with:
+Este proyecto fue hecho utilizando las siguientes tecnologías:
 
 - Vite
 - TypeScript
@@ -18,6 +18,7 @@ This project is built with:
 - PostgresSQL
 - Supabase
 - Lovable 
+- Vercel
 
 ## Dirección de la página web?
 
